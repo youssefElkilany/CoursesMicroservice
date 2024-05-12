@@ -3,7 +3,10 @@ import { generalFields } from '../../middleware/validation.js'
 
 export const addtoCart = {
     body: joi.object().required().keys({
-        productId: generalFields.id,
+        name: joi.string().required(),
+        instructorId: joi.number().required(),
+        category: joi.string().required(),
+        //duration: joi.string().required(),
         capacity:joi.number().required()
     }),
     // file:  joi.object().required().keys({}),

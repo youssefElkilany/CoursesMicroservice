@@ -89,31 +89,33 @@ import { json } from "express";
 
 export const createCourse = async (req, res, next) => {
   
-    const {courseName,instructorId,duration,capacity,category} = req.body
+    const {name,duration,capacity,category} = req.body
     const {id} = req.user
     // elmfrood ageeb id mn java ee
+    console.log({name,id,capacity});
     
-    const findCourse = await courseModel.findOne({courseName,instructorId:id})
+    const findCourse = await courseModel.findOne({name,instructorId:id})
     if(findCourse)
         {
             return res.json("course already exist")
         }
         //23ml validation 3la duration w capacity
 
-        const createCourse = await courseModel.create({courseName,instructorId,category,capacity,duration})
+        const createCourse = await courseModel.create({name,instructorId:id,category,capacity,duration})
         if(!createCourse)
             {
                 return res.json("nothing added")
             }
-            return res.json({MSG:"added successfully"})
+           return res.json({MSG:"added successfully"})
 
-};
+}
 
 
 export const getInstructorCourses = async(req,res,next)=>{
 
     //instructor id mn authentication
     const {id} = req.user
+    console.log({id})
 
     const courses = await courseModel.find({instructorId:id})
     if(!courses)
@@ -125,25 +127,58 @@ export const getInstructorCourses = async(req,res,next)=>{
 
 }
 
-export const searchInstructorCourses = async(req,res,next)=>{
+// export const searchInstructorCourses = async(req,res,next)=>{
 
-    const {name,category} = req.user
+//     const {name,category} = req.body
+//    // const {id} = req.user
 
-    const searchCourse = await courseModel.find(name,category)
-    if(!searchCourse)
-        {
-            return res.json("no available courses")
+//     const searchCourse = await courseModel.find({name,$or:{category}}) // na2es id of instructor
+//     if(!searchCourse)
+//         {
+//             return res.json("no available courses")
+//         }
+
+//         return res.json({searchCourse})
+
+// }
+
+export const searchInstructorCourses = async (req, res, next) => {
+    const { name, category } = req.params;
+
+    // Define the search criteria based on name and/or category
+    const searchCriteria = {
+        instructorId : req.user.id
+    };
+    if (name) {
+        searchCriteria.name = { $regex: name, $options: 'i' }; // Partial match search for name
+    }
+    if (category) {
+        searchCriteria.category = category; // Exact match for category
+    }
+
+    try {
+        // Search for courses based on the provided criteria
+        const searchCourse = await courseModel.find(searchCriteria);
+
+        if (searchCourse.length === 0) {
+            // If no courses are found, return an appropriate response
+            return res.json({ message: "No available courses" });
         }
 
-        return res.json({searchCourse})
+        // If courses are found, return them in the response
+        return res.json({ searchCourse });
+    } catch (error) {
+        // If an error occurs during the search, pass it to the error handler middleware
+        return next(error);
+    }
+};
 
-}
 
 export const sortCourses = async(req,res,next)=>{
 
    // const {name,category} = req.user
 
-    const searchCourse = await courseModel.find().sort({rating:-1})
+    const searchCourse = await courseModel.find({instructorId:req.user.id}).sort({rating:-1})
     if(!searchCourse)
         {
             return res.json("no available courses")
@@ -166,6 +201,39 @@ export const publishedCourses = async(req,res,next)=>{
         return res.json({courses})
 
 }
+
+ // student
+export const searchpublishedCourses = async (req, res, next) => {
+    const { name, category } = req.params;
+
+    // Define the search criteria based on name and/or category
+    const searchCriteria = {
+        published: true // Only search for published courses
+    };
+    if (name) {
+        searchCriteria.name = { $regex: name, $options: 'i' }; // Partial match search for name
+    }
+    if (category) {
+        searchCriteria.category = category; // Exact match for category
+    }
+
+    try {
+        // Search for courses based on the provided criteria
+        const searchCourse = await courseModel.find(searchCriteria);
+
+        if (searchCourse.length === 0) {
+            // If no courses are found, return an appropriate response
+            return res.json({ message: "No available courses" });
+        }
+
+        // If courses are found, return them in the response
+        return res.json({ searchCourse });
+    } catch (error) {
+        // If an error occurs during the search, pass it to the error handler middleware
+        return next(error);
+    }
+};
+
 
 ///////////////////////////  admin //////////////////////////////////////
 
@@ -238,7 +306,7 @@ export const editCourses = async(req,res,next)=>{
 export const publishCourse = async (req,res,next)=>{
 
     const {courseId} = req.params
-    const updateCourse = await courseModel.findByIdAndUpdate({_id:courseId},{published:"published"},{new:true})
+    const updateCourse = await courseModel.findByIdAndUpdate({_id:courseId},{published:true},{new:true})
     if(!updateCourse)
         {
             return res.json("nothing found to update")
@@ -247,3 +315,58 @@ export const publishCourse = async (req,res,next)=>{
         return res.json({Course:updateCourse})
 }
 
+
+
+///////// api for microservices ///////////////////////////
+
+export const publishedCoursesMicro = async(req,res,next)=>{
+
+
+    const courses = await courseModel.find({published:false})
+    if(!courses)
+        {
+            return res.json("no available courses")
+        }
+
+        return res.json({courses})
+
+}
+
+export const addReview = async(req,res,next)=>{
+    const {comment} = req.body
+    const {courseId} = req.params
+
+    const findCourse = await courseModel.findById(courseId)
+    if(!findCourse)
+        {
+            return res.json("no courses found")
+        }
+
+        const userResponse = await axios.get(`http://localhost:3000/enrollment/`)
+        const data = userResponse.data
+
+        let flag = false
+        let enrollment = {}
+        for (const obj of data) {
+            if( courseId == obj.courseId  && obj.status == "accepted" && obj.studentId == req.user.id)
+                {
+                    enrollment = obj
+                    flag = true
+                    break
+                }
+        }
+    
+        if(!flag)
+            {
+                return res.json("course not found")
+            }
+
+            const updateCourse = await courseModel.findByIdAndUpdate({_id:courseId},{reviews:{studentId:req.user.id,comment}},{new:true})
+    if(!updateCourse)
+        {
+            return res.json("nothing found to update")
+        }
+
+        return res.json({MSG:"updated",updateCourse})
+            
+}

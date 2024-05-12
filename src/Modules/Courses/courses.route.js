@@ -4,7 +4,26 @@ import auth from "../../Middelware/Auth.js";
 import { roles } from "../../Middelware/validation.js";
 const router  = Router()
 
+// instructor
+router.post("/",auth(roles.instructor),cc.createCourse)
+router.get("/instcourses",auth(roles.instructor),cc.getInstructorCourses)
+router.get("/instSearch/:searchKey",auth(roles.instructor),cc.searchInstructorCourses)
+router.get("/sort",auth(roles.instructor),cc.sortCourses)
 
-router.get("/",auth(roles.instructor),cc.createCourse)
+//student
+router.get("/published",auth(roles.student),cc.publishedCourses)
+router.get("/search/:searchKey",auth(roles.student),cc.searchpublishedCourses)
+router.put("/review",auth(roles.student),cc.addReview)
+
+
+// microservices 
+router.get("/publishedCourses",cc.publishedCoursesMicro) // for microservices
+
+
+
+// for admin
+router.get("/allCourses",auth(roles.admin),cc.AllCourses)
+router.delete("/removeCourse",auth(roles.admin),cc.removeCourses)
+router.put("/editCourse",auth(roles.admin),cc.editCourses)
 
 export default router
