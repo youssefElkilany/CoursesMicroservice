@@ -1,66 +1,7 @@
-// const userResponse = await axios.get(`http://localhost:8080/ejb8-1.0-SNAPSHOT/api/auth/Accounts`);
-// const userData = userResponse.data;
-
 import axios, { formToJSON } from "axios";
 import courseModel from "../../../../DB/courseModel.js";
-import { json } from "express";
+import jwt from "jsonwebtoken"
 
-
-//import http from 'http';
-
-// Define the options for the HTTP request
-// const options = {
-//   hostname: 'localhost',
-//   port: 8080, // Replace with the actual port of your Java EE API
-//   path: 'ejb8-1.0-SNAPSHOT/api/hello-world',
-//   method: 'GET',
-// };
-
-// // Make the HTTP request
-// const req = http.request(options, (res) => {
-//   let data = '';
-
-//   // A chunk of data has been received.
-//   res.on('data', (chunk) => {
-//     data += chunk;
-//   });
-
-//   // The whole response has been received.
-//   res.on('end', () => {
-//     console.log('Response data:', data);
-//   });
-// });
-
-// // Handle errors
-// req.on('error', (error) => {
-//   console.error('Error:', error);
-// });
-
-// // End the request
-// req.end();
-
-
-// export const createCourse =  async(req,res,next)=>{
-
-//     const userResponse = await axios.get(`http://localhost:8080/ejb8-1.0-SNAPSHOT/api/hello-world`);
-//     // console.log(userResponse.status)
-//     // console.log(userResponse.data)
-//     // console.log(userResponse.headers)
-//    return res.json(userResponse)
-// // axios.get('http://localhost:8080/ejb8-1.0-SNAPSHOT/api/hello-world')
-// //   .then(response => {
-// //     // Handle successful response from Java EE service
-
-// //     console.log({response:response.data});
-// //     //return res.status(200).json(response)
-// //   })
-// //   .catch(error => {
-// //     // Handle error
-// //    console.log();('Error calling Java EE service:', error);
-// //   });
-// // //return res.json("Gg");
-// return res.json({courses:"all courses"})
-// }
 
 
 
@@ -332,6 +273,22 @@ export const publishedCoursesMicro = async(req,res,next)=>{
 
 }
 
+export const enrolledNumMicro = async(req,res,next)=>{
+
+    const {courseId} = req.body
+    const courses = await courseModel.findById(courseId)
+    if(!courses)
+        {
+            return res.json("no available courses")
+        }
+
+        courses.enrolledStudents -=1
+        courses.save()
+
+        return res.json({courses})
+
+}
+
 export const addReview = async(req,res,next)=>{
     const {comment} = req.body
     const {courseId} = req.params
@@ -369,4 +326,21 @@ export const addReview = async(req,res,next)=>{
 
         return res.json({MSG:"updated",updateCourse})
             
+}
+
+
+export const tokenCreation = async (req,res,next)=>{
+    const {email,password} = req.body
+
+    const userResponse = await axios.post(`http://127.0.0.1:8081/ejb8-1.0-SNAPSHOT/api/auth/signin`,{email,password})
+    if(!email || !password)
+        {
+            return res.json("u need to fullfill email and password first")
+        }
+    const data = userResponse.data
+    console.log({data})
+
+     const token = jwt.sign({id:data.id},'secret')
+
+     return res.json({MSG:"token created MR HOSS",token,role:data.role})
 }

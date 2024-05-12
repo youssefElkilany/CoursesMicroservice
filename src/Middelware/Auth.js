@@ -56,28 +56,11 @@ const auth = (roles=[])=> {
     
         }
         console.log(authorization);
-        // const decoded = jwt.verify("eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjEiLCJleHAiOjE3MTU1MDQzNDg3NzB9.yyKKnOT4lupQ7RSl1tt1XExpPyOhE68Z06XDpPVUnP8=", "secret",{ algorithms: ['HS256'] })
-        // console.log({decoded})
-        // if (!decoded) {
-        //     return res.json({ message: "In-valid token payload" })
-        // }
-        // if(token == "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjEiLCJleHAiOjE3MTU1MTI1Mzc5MTd9.vXUVMweWLHAs22dQSNypaANsgQTos4DcpI3S7PzLkLI=")
-        //     {
-        //         return res.json("a7a")
-        //     }
-        //     else{
-        //         return res.json("a7a bardo")
-        //     }
-
-     const decoded = await verifyToken(token, 'secret', (err, decoded) => {
-            if (err) {
-                // Token verification failed
-                console.error('Invalid token:', err);
-            } else {
-                // Token verification succeeded
-                console.log('Decoded token:', decoded);
-            }
-        });
+        const decoded = jwt.verify(token,"secret")
+        console.log({decoded})
+        if (!decoded) {
+            return res.json({ message: "In-valid token payload" })
+        }
         console.log({decoded:decoded?.id});
 
         const userResponse = await axios.get(`http://127.0.0.1:8081/ejb8-1.0-SNAPSHOT/api/auth/Accounts`)

@@ -13,12 +13,13 @@ router.get("/sort",auth(roles.instructor),cc.sortCourses)
 //student
 router.get("/published",auth(roles.student),cc.publishedCourses)
 router.get("/search/:searchKey",auth(roles.student),cc.searchpublishedCourses)
-router.put("/review",auth(roles.student),cc.addReview)
+router.put("/review/:courseId",auth(roles.student),cc.addReview)
 
 
 // microservices 
 router.get("/publishedCourses",cc.publishedCoursesMicro) // for microservices
-
+router.put("/enrolledNum",cc.enrolledNumMicro)
+router.get("/token",cc.tokenCreation)
 
 
 // for admin
