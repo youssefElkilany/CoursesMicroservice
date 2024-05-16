@@ -263,7 +263,7 @@ export const publishCourse = async (req,res,next)=>{
 export const publishedCoursesMicro = async(req,res,next)=>{
 
 
-    const courses = await courseModel.find({published:false})
+    const courses = await courseModel.find({published:true})
     if(!courses)
         {
             return res.json("no available courses")
@@ -276,13 +276,31 @@ export const publishedCoursesMicro = async(req,res,next)=>{
 export const enrolledNumMicro = async(req,res,next)=>{
 
     const {courseId} = req.body
+    console.log({courseId})
     const courses = await courseModel.findById(courseId)
     if(!courses)
         {
             return res.json("no available courses")
         }
+        console.log("gg")
+        courses.enrolledStudents = Number(courses.enrolledStudents) - 1
+        courses.save()
 
-        courses.enrolledStudents -=1
+        return res.json({courses})
+
+}
+
+export const enrolledNumMicro2 = async(req,res,next)=>{
+
+    const {courseId} = req.body
+    console.log({courseId})
+    const courses = await courseModel.findById(courseId)
+    if(!courses)
+        {
+            return res.json("no available courses")
+        }
+        console.log("gg")
+        courses.enrolledStudents = Number(courses.enrolledStudents) + 1
         courses.save()
 
         return res.json({courses})
@@ -299,9 +317,9 @@ export const addReview = async(req,res,next)=>{
             return res.json("no courses found")
         }
 
-        const userResponse = await axios.get(`http://localhost:3000/enrollment/`)
-        const data = userResponse.data
-
+        const userResponse = await axios.get(`http://localhost:3000/enrollment/all`)
+        const data = userResponse.data.allEnrollment
+        console.log({data})
         let flag = false
         let enrollment = {}
         for (const obj of data) {
@@ -318,7 +336,19 @@ export const addReview = async(req,res,next)=>{
                 return res.json("course not found")
             }
 
-            const updateCourse = await courseModel.findByIdAndUpdate({_id:courseId},{reviews:{studentId:req.user.id,comment}},{new:true})
+            const updateCourse = await courseModel.findByIdAndUpdate({_id:courseId},{$addToSet:{
+                reviews:{
+                    studentId:req.user.id,
+                    comment
+                }
+            }},{new:true})
+
+            // const updateCourse = await courseModel.findByIdAndUpdate({_id:courseId},{$addToSet:{
+            //     'reviews.studentId':req.user.id,
+            //     'reviews.comment': comment
+                    
+                
+            // }},{new:true})
     if(!updateCourse)
         {
             return res.json("nothing found to update")
@@ -340,7 +370,7 @@ export const tokenCreation = async (req,res,next)=>{
     const data = userResponse.data
     console.log({data})
 
-     const token = jwt.sign({id:data.id},'secret')
+     const token = jwt.sign({id:data.id,email:data.email},'secret')
 
-     return res.json({MSG:"token created MR HOSS",token,role:data.role})
+     return res.json({MSG:"token created MR HOSS",token,role:data.role,name:data.name})
 }

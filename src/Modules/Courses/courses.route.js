@@ -18,13 +18,15 @@ router.put("/review/:courseId",auth(roles.student),cc.addReview)
 
 // microservices 
 router.get("/publishedCourses",cc.publishedCoursesMicro) // for microservices
-router.put("/enrolledNum",cc.enrolledNumMicro)
-router.get("/token",cc.tokenCreation)
+router.post("/enrolledNum",cc.enrolledNumMicro)
+router.post("/enrolledNum2",cc.enrolledNumMicro2)
+router.post("/token",cc.tokenCreation)
 
 
 // for admin
 router.get("/allCourses",auth(roles.admin),cc.AllCourses)
-router.delete("/removeCourse",auth(roles.admin),cc.removeCourses)
+router.delete("/removeCourse/:courseId",auth(roles.admin),cc.removeCourses)
 router.put("/editCourse",auth(roles.admin),cc.editCourses)
+router.patch("/publish/:courseId",auth(roles.admin),cc.publishCourse)
 
 export default router
