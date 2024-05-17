@@ -7,12 +7,12 @@ const router  = Router()
 // instructor
 router.post("/",auth(roles.instructor),cc.createCourse)
 router.get("/instcourses",auth(roles.instructor),cc.getInstructorCourses)
-router.get("/instSearch/:searchKey",auth(roles.instructor),cc.searchInstructorCourses)
+router.get("/instSearch",auth(roles.instructor),cc.searchInstructorCourses)
 router.get("/sort",auth(roles.instructor),cc.sortCourses)
 
 //student
 router.get("/published",auth(roles.student),cc.publishedCourses)
-router.get("/search/:searchKey",auth(roles.student),cc.searchpublishedCourses)
+router.get("/search",auth(roles.student),cc.searchpublishedCourses)
 router.put("/review/:courseId",auth(roles.student),cc.addReview)
 
 
@@ -26,7 +26,9 @@ router.post("/token",cc.tokenCreation)
 // for admin
 router.get("/allCourses",auth(roles.admin),cc.AllCourses)
 router.delete("/removeCourse/:courseId",auth(roles.admin),cc.removeCourses)
-router.put("/editCourse",auth(roles.admin),cc.editCourses)
+router.put("/editCourse/:courseId",auth(roles.admin),cc.editCourses)
 router.patch("/publish/:courseId",auth(roles.admin),cc.publishCourse)
+router.get("/sum",auth(roles.admin),cc.sumOfCourses)
+router.get("/pop",auth(roles.admin),cc.coursesPopularity)
 
 export default router
