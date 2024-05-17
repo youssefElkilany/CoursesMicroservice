@@ -1,12 +1,14 @@
 import joi from 'joi'
-import { generalFields } from '../../middleware/validation.js'
+//import { generalFields } from '../../Middleware/validation.js'
+import { generalFields } from '../../Middelware/validation.js'
 
-export const addtoCart = {
+export const createCourse = {
     body: joi.object().required().keys({
         name: joi.string().required(),
-        instructorId: joi.number().required(),
         category: joi.string().required(),
-        //duration: joi.string().required(),
+        duration: joi.string()
+        .regex(/^\d{1,3}:\d{2}$/).required(),
+       // .error(new Error('Invalid duration format. Please use xx:yy.')),
         capacity:joi.number().required()
     }),
     // file:  joi.object().required().keys({}),

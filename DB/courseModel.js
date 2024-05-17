@@ -3,7 +3,7 @@ import { Schema,model } from "mongoose";
 const courseSchema  = new Schema({
     name:{type:String,required:true},
     instructorId:{type:Number,required:true},
-    duration:{type:Number,required:false},
+    duration:{type:String,required:false},
     category:{type:String,required:true},
     rateNo:{type:Number,default:0},
     avgRate:{type:Number,default:0},

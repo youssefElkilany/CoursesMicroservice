@@ -25,12 +25,15 @@ import jwt from "jsonwebtoken"
 //     }
 // };
 
-
+function isValidDurationFormat(duration) {
+    const regex = /^\d{1,3}:\d{2}$/; // Regular expression for xx:yy format
+    return regex.test(duration);
+  }
 
 
 export const createCourse = async (req, res, next) => {
   
-    const {name,duration,capacity,category} = req.body
+    let {name,duration,capacity,category} = req.body
     const {id} = req.user
     // elmfrood ageeb id mn java ee
     console.log({name,id,capacity});
@@ -40,7 +43,10 @@ export const createCourse = async (req, res, next) => {
         {
             return res.json("course already exist")
         }
-        //23ml validation 3la duration w capacity
+        // if (!isValidDurationFormat(duration)) {
+        //     return res.json({ MSG: "Invalid duration format. Please use xx:yy." });
+        //   }
+
 
         const createCourse = await courseModel.create({name,instructorId:id,category,capacity,duration})
         if(!createCourse)
@@ -93,16 +99,21 @@ export const searchInstructorCourses = async (req, res, next) => {
     if (name) {
         searchCriteria.name = { $regex: name, $options: 'i' }; // Partial match search for name
     }
-    if (category) {
-        searchCriteria.category = { $regex: name, $options: 'i' } // Exact match for category
+   else if (category) {
+        searchCriteria.category = { $regex: category, $options: 'i' } // Exact match for category
     }
     else{
         return res.json({MSG:"no courses found"})
     }
+    console.log({searchCriteria})
 
     try {
         // Search for courses based on the provided criteria
         const courses = await courseModel.find(searchCriteria);
+        if(!courses)
+            {
+                return res.json({MSG:"no courses found"})
+            }
 
         // if (searchCourse.length === 0) {
         //     // If no courses are found, return an appropriate response
@@ -122,13 +133,13 @@ export const sortCourses = async(req,res,next)=>{
 
    // const {name,category} = req.user
 
-    const searchCourse = await courseModel.find({instructorId:req.user.id}).sort({rating:-1})
-    if(!searchCourse)
+    const courses = await courseModel.find({instructorId:req.user.id}).sort({rating:-1})
+    if(!courses)
         {
             return res.json("no available courses")
         }
 
-        return res.json({searchCourse})
+        return res.json({courses})
 
 }
 
@@ -168,7 +179,7 @@ export const searchpublishedCourses = async (req, res, next) => {
 
     try {
         // Search for courses based on the provided criteria
-        const searchCourse = await courseModel.find(searchCriteria);
+        const courses = await courseModel.find(searchCriteria);
         if(!searchCourse)
             {
                 return res.json({MSG:"no courses found with this criteria"})
@@ -180,7 +191,7 @@ export const searchpublishedCourses = async (req, res, next) => {
         // }
 
         // If courses are found, return them in the response
-        return res.json({ searchCourse });
+        return res.json({ courses });
     } catch (error) {
         // If an error occurs during the search, pass it to the error handler middleware
         return next(error);
@@ -328,11 +339,109 @@ export const enrolledNumMicro2 = async(req,res,next)=>{
         }
         console.log("gg")
         courses.enrolledStudents = Number(courses.enrolledStudents) + 1
-        courses.save()
+      await courses.save()
 
         return res.json({courses})
 
 }
+
+// export const addReview = async(req,res,next)=>{
+//     const {comment,rating} = req.body
+//     const {courseId} = req.params
+
+//     const findCourse = await courseModel.findById(courseId)
+//     if(!findCourse)
+//         {
+//             return res.json("no courses found")
+//         }
+
+//         const userResponse = await axios.get(`http://localhost:3000/enrollment/all`)
+//         const data = userResponse.data.allEnrollment
+//         console.log({data})
+//         let flag = false
+//         let enrollment = {}
+//         for (const obj of data) {
+//             if( courseId == obj.courseId  && obj.status == "accepted" && obj.studentId == req.user.id)
+//                 {
+//                     enrollment = obj
+//                     flag = true
+//                     break
+//                 }
+//         }
+    
+//         if(!flag)
+//             {
+//                 return res.json("course not found")
+//             }
+
+//             // const updateCourse = await courseModel.findByIdAndUpdate({_id:courseId},{$addToSet:{
+//             //     reviews:{
+//             //         studentId:req.user.id,
+//             //         comment
+//             //     }
+//             // }},{new:true})
+
+//             // const updateCourse = await courseModel.findByIdAndUpdate({_id:courseId},{$addToSet:{
+//             //     'reviews.studentId':req.user.id,
+//             //         'reviews.comment':comment
+//             //     }
+//             // },{new:true})
+
+//             const updateCourse = await courseModel.findOne({_id:courseId,'reviews.studentId':req.user.id})
+//     if(!updateCourse)
+//         {
+//             const pushReview = await courseModel.findOneAndUpdate({_id:courseId},{$push:{
+//                 reviews:{
+//                     studentId:req.user.id,
+//                     comment,
+//                     rating
+//                 } // nb2a nshoof 7war avg rate b3deen
+//             }},{new:true})
+//             if(!pushReview)
+//                 {
+//                     return res.json({MSG:"nothing updated"})
+//                 }
+//             let oldAvg = pushReview.avgRate
+//     let rateNo = pushReview.rateNo
+//     let sum = oldAvg * rateNo + rating
+//     pushReview.avgRate = sum / (rateNo+1) 
+//     pushReview.rateNo = rateNo+1 
+
+//     pushReview.save()
+//             return res.json({MSG:"updated",pushReview})
+//         }
+
+//         let oldRating = 0
+//         for (const reviews of updateCourse.reviews) {
+//             if(req.user.id == reviews.studentId)
+//                 {
+//                     oldRating = reviews.rating
+//                     break
+//                 }
+//         }
+
+//         let oldsum = (updateCourse.avgRate * updateCourse.rateNo) - oldRating
+        
+//         const updateComment = await courseModel.findOneAndUpdate({_id:courseId,'reviews.studentId':req.user.id},{$set:{
+//             reviews:{
+//                 studentId:req.user.id,
+//                 comment,
+//                 rating
+//             }
+//         }},{new:true})
+//         if(!updateComment)
+//             {
+//                 return res.json({MSG:"nothing updated"})
+//             }
+
+//             let newsum = oldsum + rating
+//             updateComment.avgRate = newsum / updateComment.rateNo
+//             updateComment.save()
+
+//    // return res.json({MSG:"commentUpdated",updateCourse})
+//         return res.json({MSG:"commentUpdated",updateComment})
+
+// }
 
 export const addReview = async(req,res,next)=>{
     const {comment,rating} = req.body
@@ -346,7 +455,7 @@ export const addReview = async(req,res,next)=>{
 
         const userResponse = await axios.get(`http://localhost:3000/enrollment/all`)
         const data = userResponse.data.allEnrollment
-        console.log({data})
+      //  console.log({data})
         let flag = false
         let enrollment = {}
         for (const obj of data) {
@@ -362,6 +471,7 @@ export const addReview = async(req,res,next)=>{
             {
                 return res.json("course not found")
             }
+            console.log({avgrate:Number(findCourse.avgRate)})
 
             // const updateCourse = await courseModel.findByIdAndUpdate({_id:courseId},{$addToSet:{
             //     reviews:{
@@ -390,46 +500,89 @@ export const addReview = async(req,res,next)=>{
                 {
                     return res.json({MSG:"nothing updated"})
                 }
-            let oldAvg = pushReview.avgRate
-    let rateNo = pushReview.rateNo
+            let oldAvg = Number(pushReview.avgRate)
+            console.log({oldAvg})
+    let rateNo = Number(pushReview.rateNo)
+    console.log({rateNo})
     let sum = oldAvg * rateNo + rating
+    console.log({sum})
     pushReview.avgRate = sum / (rateNo+1) 
     pushReview.rateNo = rateNo+1 
 
-    pushReview.save()
+ await  pushReview.save()
             return res.json({MSG:"updated",pushReview})
         }
 
-        let oldRating = 0
-        for (const reviews of updateCourse.reviews) {
-            if(req.user.id == reviews.studentId)
-                {
-                    oldRating = reviews.rating
-                    break
-                }
+        // let oldRating = 0
+        // for (const reviews of updateCourse.reviews) {
+        //     console.log({reviews});
+        //     if(req.user.id == reviews.studentId)
+        //         {
+        //             oldRating = Number(reviews.rating)
+        //             console.log({oldRating})
+        //             break
+        //         }
+        // }
+
+        // let oldsum = (Number(updateCourse.avgRate) * Number(updateCourse.rateNo)) - oldRating
+        // console.log({oldsum})
+        
+        // const pullReview = await courseModel.updateOne({_id:courseId,'reviews.studentId':req.user.id},{$pull:{
+        //     reviews:{
+        //         studentId:req.user.id,
+        //     }
+        // }})
+        // if(pullReview)
+        //     {
+        //         const pushReview = await courseModel.findOneAndUpdate({_id:courseId,'reviews.studentId':req.user.id},{$addToSet:{
+        //             reviews:{
+        //                 studentId:req.user.id,
+        //                 comment,
+        //                 rating
+        //             }
+        //         }},{new:true})
+        //         if(!pushReview)
+        //             {
+        //                 return res.json({MSG:"nothing updated"})
+        //             }
+        
+        //             let newsum = oldsum + rating
+        //             console.log({newsum})
+        //             pushReview.avgRate = newsum / Number(pushReview.rateNo)
+        //           await  pushReview.save()
+        
+        //    // return res.json({MSG:"commentUpdated",updateCourse})
+        //         return res.json({MSG:"commentUpdated",updateComment})
+        //     }
+        return res.json({MSG:"u already reviewed before"})        
+
+}
+
+
+export const getReviews = async (req,res,next)=>{
+
+    const {courseId} = req.params
+
+    const getReviews = await courseModel.findById(courseId).select("reviews")
+    if(!getReviews)
+        {
+            return res.json("no reviews found")
         }
 
-        let oldsum = (updateCourse.avgRate * updateCourse.rateNo) - oldRating
-        
-        const updateComment = await courseModel.findOneAndUpdate({_id:courseId,'reviews.studentId':req.user.id},{$set:{
-            reviews:{
-                studentId:req.user.id,
-                comment,
-                rating
-            }
-        }},{new:true})
-        if(!updateComment)
-            {
-                return res.json({MSG:"nothing updated"})
-            }
+        return res.json({MSG:"all reviews",getReviews})
+}
 
-            let newsum = oldsum + rating
-            updateComment.avgRate = newsum / updateComment.rateNo
-            updateComment.save()
+export const getReviews2 = async (req,res,next)=>{
 
-   // return res.json({MSG:"commentUpdated",updateCourse})
-        return res.json({MSG:"commentUpdated",updateComment})
+    const {courseId} = req.params
 
+    const getReviews = await courseModel.findOne({_id:courseId,instructorId:req.user.id}).select("reviews")
+    if(!getReviews)
+        {
+            return res.json("no reviews found")
+        }
+
+        return res.json({MSG:"all reviews",getReviews})
 }
 
 

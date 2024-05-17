@@ -1,11 +1,12 @@
 import { Router } from "express";
 import * as cc from './Controller/courses.js'
 import auth from "../../Middelware/Auth.js";
-import { roles } from "../../Middelware/validation.js";
+import { roles , validation } from "../../Middelware/validation.js";
+import * as val from "./Course.validation.js"
 const router  = Router()
 
 // instructor
-router.post("/",auth(roles.instructor),cc.createCourse)
+router.post("/",auth(roles.instructor),validation(val.createCourse),cc.createCourse)
 router.get("/instcourses",auth(roles.instructor),cc.getInstructorCourses)
 router.get("/instSearch",auth(roles.instructor),cc.searchInstructorCourses)
 router.get("/sort",auth(roles.instructor),cc.sortCourses)
@@ -13,7 +14,9 @@ router.get("/sort",auth(roles.instructor),cc.sortCourses)
 //student
 router.get("/published",auth(roles.student),cc.publishedCourses)
 router.get("/search",auth(roles.student),cc.searchpublishedCourses)
-router.put("/review/:courseId",auth(roles.student),cc.addReview)
+router.post("/review/:courseId",auth(roles.student),cc.addReview)
+router.get("/reviews/:courseId",auth(roles.student),cc.getReviews)
+router.get("/instReviews/:courseId",auth(roles.instructor),cc.getReviews2)
 
 
 // microservices 
